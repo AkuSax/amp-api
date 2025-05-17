@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from utils.predict import load_model_and_data, predict_sequence, predict_batch
 
 app = FastAPI()
-model, embeddings_df = load_model_and_data()
+model, X_features, sequence_ids = load_model_and_data()
 
 class SequenceRequest(BaseModel):
     sequence: str
@@ -11,7 +11,7 @@ class SequenceRequest(BaseModel):
 @app.post("/predict")
 def predict(seq: SequenceRequest):
     try:
-        result = predict_sequence(seq.sequence, model, embeddings_df)
+        result = predict_sequence(seq.sequence, model, X_features, sequence_ids)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -20,7 +20,7 @@ def predict(seq: SequenceRequest):
 async def batch_predict(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        result = predict_batch(contents, model, embeddings_df)
+        result = predict_batch(contents, model, X_features, sequence_ids)
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

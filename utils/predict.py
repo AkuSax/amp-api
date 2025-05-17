@@ -1,17 +1,19 @@
-import pandas as pd
+import numpy as np
 import joblib
-import io
 
 def load_model_and_data():
     model = joblib.load("model/classifier.pkl")
-    df = pd.read_csv("model/embeddings.csv", index_col=0)
-    return model, df
+    X = np.load("model/final_features.npy")
+    with open("model/sequence_ids.txt") as f:
+        ids = [line.strip() for line in f]
+    return model, X, ids
 
-def predict_sequence(sequence, model, df):
+def predict_sequence(sequence, model, X, ids):
     sequence = sequence.upper().strip()
-    if sequence not in df.index:
-        raise ValueError("Sequence not found in precomputed embeddings.")
-    x = df.loc[sequence].values.reshape(1, -1)
+    if sequence not in ids:
+        raise ValueError("Sequence not found in feature set.")
+    idx = ids.index(sequence)
+    x = X[idx].reshape(1, -1)
     pred = model.predict(x)[0]
     prob = model.predict_proba(x)[0].max()
     return {
@@ -20,14 +22,14 @@ def predict_sequence(sequence, model, df):
         "confidence": float(prob)
     }
 
-def predict_batch(file_contents, model, df):
+def predict_batch(file_contents, model, X, ids):
     decoded = file_contents.decode()
     lines = decoded.strip().splitlines()
     results = []
     for line in lines:
         seq = line.strip()
         try:
-            result = predict_sequence(seq, model, df)
+            result = predict_sequence(seq, model, X, ids)
             results.append(result)
         except:
             results.append({
