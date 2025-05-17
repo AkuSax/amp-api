@@ -3,9 +3,18 @@ import joblib
 
 def load_model_and_data():
     model = joblib.load("model/classifier.pkl")
-    X = np.load("model/final_features.npy")
+    features = np.load("model/features.npz")
+
+    X1 = features["X1"]
+    X2 = features["X2"]
+    X3 = features["X3"]
+
+    X1_pooled = X1.mean(axis=1)
+    X = np.concatenate([X1_pooled, X2, X3], axis=1)
+
     with open("model/sequence_ids.txt") as f:
         ids = [line.strip() for line in f]
+
     return model, X, ids
 
 def predict_sequence(sequence, model, X, ids):
